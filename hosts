@@ -1,0 +1,3 @@
+[apache]
+192.168.50.111 ansible_connection=ssh        ansible_user=vagrant 
+192.168.50.112 ansible_connection=ssh        ansible_user=vagrant 

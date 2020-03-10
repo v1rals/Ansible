@@ -1,0 +1,23 @@
+---
+- hosts: apache
+  sudo: yes
+  tasks:
+  - name: disable network manager
+    service: name=NetworkManager state=stopped enabled=no
+
+  - name: "Checking GRUB cmdline"
+    shell: "grep 'GRUB_CMDLINE_LINUX_DEFAULT=.*net.ifnames=0.*' /etc/default/grub"
+    register: grub_cfg_grep
+    changed_when: false
+    failed_when: false
+
+  - name: "Configuring GRUB cmdline"
+    replace:
+      path: '/etc/default/grub'
+      regexp: '^GRUB_CMDLINE_LINUX_DEFAULT="((\w.?)*)"$'
+      replace: 'GRUB_CMDLINE_LINUX_DEFAULT="\1 net.ifnames=0"'
+    when: '"net.ifnames=0" not in grub_cfg_grep'
+
+  - name:  grub2-mkconfig
+    shell:
+      cmd: grub2-mkconfig -o /etc/default/grub 

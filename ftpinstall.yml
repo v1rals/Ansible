@@ -1,0 +1,74 @@
+---
+- name: Deploy VSFTP and Web Server
+  hosts: apache
+  sudo: yes
+  tasks:
+
+# To demonstrate FACTs we used two different OS flavor - RHEL.
+  - block:
+    - name: Install FTP package on RHEL
+      yum:
+        name: vsftpd
+        state: present
+
+
+    - name: Install HTTP package on RHEL
+      yum:
+        name: httpd
+        state: present
+
+    - name: Install libsemanage-python
+      yum:
+        name: libsemanage-python
+        state: present
+
+
+    - name: Install Firewalld package on RHEL
+      yum:
+        name: firewalld
+        state: present
+
+# Bringing up services only on RHEL - HTTP, FTP and Firwall. To bring up these services only on Ubuntu you can use same modules and attribute with "when: ansible_distribution == "Ubuntu" fact. 
+  - block:
+    - name: Start firewall Service
+      service: name=firewalld state=started enabled=yes
+
+   
+    - name: Start WEB Service
+      service: name=httpd state=started enabled=yes
+
+   
+    - name: Start FTP Service
+      service: name=vsftpd state=started enabled=yes
+
+   
+# Allow Web and FTP services on RHEL Firewall
+  - block:
+    - name: Allow Web service in Firewall
+      firewalld: service=http permanent=true state=enabled immediate=true
+
+   
+    - name: Allow FTP service in Firewall
+      firewalld: port=21/tcp permanent=true state=enabled immediate=true
+
+
+    - name: Configuring vsftp
+      template:
+        src: vsftpd.conf.j2
+        dest: /etc/vsftpd/vsftpd.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Set ftpd_anon_write flag on and keep it persistent across reboots
+      seboolean:
+        name: ftpd_anon_write
+        state: yes
+        persistent: yes
+
+# Reload FTP service to apply above chanegs.
+  - block:
+    - name: Start FTP service
+      service: name=vsftpd state=restarted enabled=yes
+
+...

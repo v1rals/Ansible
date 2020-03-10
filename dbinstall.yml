@@ -1,0 +1,17 @@
+---
+- hosts: all
+  vars:
+    mypath: /tmp/database
+  tasks:
+    - stat: path={{mypath}}
+      register: foo
+
+    - debug: var=foo
+
+    - name: install mariadb if  file exists
+      yum:
+        name:
+          - mariadb-server
+        state: latest
+      when: foo.stat.exists
+
